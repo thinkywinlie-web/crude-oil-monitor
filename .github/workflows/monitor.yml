@@ -1,0 +1,38 @@
+name: Crude Oil News Monitor
+
+on:
+  schedule:
+    # Elke 5 minuten, 24/7. GitHub garandeert geen exacte timing (kan enkele
+    # minuten vertraging hebben, zeker bij drukte). Zie README voor een
+    # echte 1-minuut-optie via je eigen PC.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}   # handmatig starten kan ook, via het Actions-tabblad
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run monitor
+        run: python oil_monitor.py
+
+      - name: Commit dashboard + log
+        run: |
+          git config user.name "oil-news-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html oil_news_log.csv seen_links.json
+          git diff --quiet --cached || git commit -m "Update crude oil dashboard [skip ci]"
+          git push
